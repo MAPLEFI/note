@@ -22,11 +22,11 @@
 @Data
 public class OSSUtil {
     //SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
-    private String endpoint = "http://oss-cn-beijing.aliyuncs.com";
-    private String accessKeyId = "LTAI4GEB5VgbBcQuE7q4ezB3";
-    private String accessKeySecret = "vgHKbTkV2tZgQMHzDJKsQr3VRiCMED";
-    //private String fileName = "/Users/dalaoyang/Desktop/aliyun.jpeg";
-    private String bucketName = "canteen-system";
+    private String endpoint = "";
+    private String accessKeyId = "";
+    private String accessKeySecret = "";
+    //private String fileName = "";
+    private String bucketName = "";
 
     public  String upload(MultipartFile file) throws IOException {
         String fileName=file.getOriginalFilename();
