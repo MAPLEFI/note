@@ -47,23 +47,23 @@ import javax.servlet.http.HttpSession;
  */
 public class TencentCosUtil_py {
 
-    static String bucketName = "youxiangtu-1302963009"; //桶的名称
+    static String bucketName = ""; //桶的名称
     static String region = "ap-nanjing";//区域北京则  beijing
-    static String appId = "1302963009"; //APPID
+    static String appId = ""; //APPID
     static COSCredentials cred = null;
     static TransferManager transferManager = null;
     static ClientConfig clientConfig = null;
-    static String key="youxiangtu";
-    static String SecretKey="c5IEtQ3TdV7VnsgNrRjwpR8Y12qfDwB6";
-    static String SecretId="AKIDz0lGUEuuqV25rMeIjJdkbroZKfrqtmkS";
-    static String qianzui="youxiangtu";
-    static String path="https://youxiangtu-1302963009.cos.ap-nanjing.myqcloud.com";
+    static String key="";
+    static String SecretKey="";
+    static String SecretId="";
+    static String qianzui="";
+    static String path="";
     static {
         // 1 初始化用户身份信息(secretId, secretKey)
         //SecretId 是用于标识 API 调用者的身份
-        String SecretId = "AKIDz0lGUEuuqV25rMeIjJdkbroZKfrqtmkS";
+        String SecretId = "";
         //SecretKey是用于加密签名字符串和服务器端验证签名字符串的密钥
-        String SecretKey = "c5IEtQ3TdV7VnsgNrRjwpR8Y12qfDwB6";
+        String SecretKey = "";
         cred = new BasicCOSCredentials(SecretId, SecretKey);
         // 2 设置bucket的区域,
         clientConfig = new ClientConfig(new Region(region));
