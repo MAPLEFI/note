@@ -178,7 +178,7 @@ public class HashMap<K,V> extends AbstractMap<K,V> implements Map<K,V>,Cloneable
     
     transient int modCount;//修改次数，用于迭代器，因为线程不安全所以用法上和ArrayList中得相同
     
-    int threshold;//表示当HashMap得size大于threshold时会执行resize操作,即为扩容因子,未初始化时为0，一半情况下为容量*loadFactor
+    int threshold;//表示当HashMap得size大于threshold时会执行resize操作,即为扩容因子,未初始化时为0，一般情况下为容量*loadFactor
     
     final float loadFactor;//哈希表中得负载因子,计算为size/capacity而不是占用桶数量出去capacity
     
@@ -325,7 +325,7 @@ public class HashMap<K,V> extends AbstractMap<K,V> implements Map<K,V>,Cloneable
              }
          }
          
-         if(e!=null){//成功插入结点或者找到了和他相同得结点
+         if(e!=null){//成功找到了和他相同得结点（该桶起点或者往后的点）,进行更新
            V oldValue=e.value;
            if(!onlyIfAbsent||oldValue==null)//如果原来得值为空或者不是只有一个存在就不能修改得情况下进行值得更新
              e.value=value;
@@ -364,7 +364,7 @@ public class HashMap<K,V> extends AbstractMap<K,V> implements Map<K,V>,Cloneable
                 }while((e=e.next)!=null)
              }  
          }  
-         if(node!=null&&(!matchValue||(v=node.value)==value||(value!=null&&value.equals(v)))){//如果node不为null并且(值相等或者matchValue=false)
+         if(node!=null&&(!matchValue||(v=node.value)==value||(value!=null&&value.equals(v)))){//如果node不为null(找到了相同的结点)并且(值相等或者matchValue=false)
             
             if(node instanceof TreeNode)
               ((TreeNode<K,V>)node).removeTreeNode(this,tab,movable);
