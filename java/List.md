@@ -274,7 +274,7 @@ public class ArrayList<E> extends AbstractList<E> implements List<E>,RandomAcces
    
    public void ensureCapacity(int minCapacity){
      将List扩容到minCapacity
-     如果原List不为空则将minCapacity与0比较如果为空则将minCapacity与10比较，如果minCapacity比要比骄傲得值大那么将原数组长度变为1.5倍之后于其比较，如果minCapacity相比原来的1.5倍还要大并且不超过List最大长度Integer_MAX_VALUE-8那么将List长度变为minCapacity否则变成原数组得1.5倍
+     如果原List不为空则将minCapacity与0比较如果为空则将minCapacity与10比较，如果minCapacity比要比较得值大那么将原数组长度变为1.5倍之后于其比较，如果minCapacity相比原来的1.5倍还要大并且不超过List最大长度Integer_MAX_VALUE-8那么将List长度变为minCapacity否则变成原数组得1.5倍
    }
    
    public int indexOf(Object o){
