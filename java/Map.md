@@ -344,6 +344,28 @@ public class HashMap<K,V> extends AbstractMap<K,V> implements Map<K,V>,Cloneable
       return (e=removeNode(hash(key),key,null,false,true))==null? null:e.value;
     }
     
+    public V get(Object key){
+     Node<K,V> e;
+     return (e=getNode(hash(key),key))==null?null:e.value;
+    }
+    
+    final Node<K,V> getNode(int hash,Object key){
+       Node<K,V>[] tab; Node<K,V> first,e;int n;K k;
+       if((tab=table)!=bull&&(n=tab.length)>0&&(first=tab[(n-1)&hash])!=null){//table桶数组不为空并且该对应hash值对应的桶不为空
+         if(first.hash==hash&&((k=first.key)==key||(key!=null&&key.equals(k))))//总是优先判断首元素
+            return first;
+         if((e=first.next)!=null){//判断该桶下一个
+            if(first instanceof TreeNode)
+               return ((TreeNode<K,V>)first).getTreeNode(hash,key);
+            do{
+               if(e.hash==hash&&((k=e.key)==key||(key!=null&&key.equals(k))))//找到了就返回
+                 return e;
+            }while((e=e.next)!=null);   //只要下面还有就往下找
+         }    
+       }
+       return null;找完这个桶都没有找到就直接返回null
+    }
+    
     
     final Node<K,V> removeNode(int hash,Object key,Object value,boolean matchValue,boolean movable){
        Node<K,V>[] tab;Node<K,V> p;int n,index;
