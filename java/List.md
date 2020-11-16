@@ -238,7 +238,7 @@ public class ArrayList<E> extends AbstractList<E> implements List<E>,RandomAcces
    private static final Object[] EMPTY_ELEMENTDATA={};//设置空对象
    
    private static final Object[] DEFAULTCAPACITY_EMPTY_ELEMENTDATA={};//填充数组为空
-   transient Object[] elementData;// 数组缓冲区，ArrayList的容量是此数组缓冲区的长度，在添加第一个元素时任何具有elementData==DEAULTCAPACITY_EMPTY_ELEMENTDATA的空Arraylist都将扩展为DEFAULT_CAPACTY即恢复默认容量
+   transient Object[] elementData;// 数组缓冲区，ArrayList的容量是此数组缓冲区的长度，在添加第一个元素时任何具有elementData==DEAULTCAPACITY_EMPTY_ELEMENTDATA的空Arraylist都将扩展为DEFAULT_CAPACTY即恢复默认容量，即ArrayList是由一个Object数组组成的
    
    private int size;
    
@@ -342,7 +342,7 @@ public class ArrayList<E> extends AbstractList<E> implements List<E>,RandomAcces
    
    private class Itr implements Iterator<E>{
       int cursor;//下一个返回元素得下标
-      int lastRet=-1;//上一个返回元素得下标，如果不存在那么值为-1
+      int lastRet=-1;//当前返回元素得下标，如果不存在那么值为-1
       int expectedModCount=modCount;//修改次数,为了和modCount保持相等，因为ArrayList是线程不安全得所以expectedModCount可以用来判断该list是否已经倍修改过了，如果不相等那么代表其他线程修改了list，判断是否相等根据方法checkForComodification()来进行判断两个值是否相等,基本每个方法执行操作钱都会运行该方法进行检验,如果不相等回抛出ConcurrentModificationException
       
       public boolean hasNext(){return cursor!=size;}//是否有下一个,判定条件为下一个元素得下标是否和size相同
@@ -404,7 +404,7 @@ public class ArrayList<E> extends AbstractList<E> implements List<E>,RandomAcces
 
 ### ArrayList总结
 
-sort()排序方法：如果长度大于2^13那么会采用并排排序，如果排序数据类型为Object那么不会采用DualPivotQuicksort，而是采用归并排序,如果不为Object数据类型那么如果长度小于27使用的是插入排序,否则使用双轴插入排序,DualPivotQuicksort()排序在1.7之前是普通的快排1.7之后采用了这种方式来加快排序速度
+sort()排序方法：如果长度大于2^13那么会采用归并排序，如果排序数据类型为Object那么不会采用DualPivotQuicksort，而是采用归并排序,如果不为Object数据类型那么如果长度小于27使用的是插入排序,否则使用双轴快速排序,DualPivotQuicksort()排序在1.7之前是普通的快排1.7之后采用了这种方式来加快排序速度
 
 paralleSort(byte[] )排序:如果长度较小那么会使用DualPivotQuicksort()即会采用插入排序或者双轴快排，如果长度大于最小并排长度即2^13即使用归并排序
 
@@ -414,6 +414,10 @@ ArrayList中 size代表当前List中元素的个数,elementDate.length()代表�
 
 
 
+**ArrayList由于add的remove方法都需要将剩下的元素左移或者右移所以插入和删除的效率较低，一般如果查找和遍历较多的情况下也就是不需要排序的时候会有较好的效率，如果插入和删除较为频繁就使用LinkedList**
+
+**也不是说Arraylist的插入和删除效率一定比LinkedList低需要考虑数据量和插入删除的位置**
+
 ArrayList中只有当size=elementDate.length()即**把当前容量装满之后才会触发扩容，容量增加原来的一半并且如果一半的值为小数那么向下取整比如9扩容之后为13=9+4**
 
 **ArrayList初始化如果没有指定参数那么会创建一个默认空容积的对象，如果原来为默认空容积对象那么第一次扩容直接扩容为容量为10得对象,如果构造方法指定了参数那么会生成对应数量容量的对象,如果指定为0那么会创建一个容量为0得对象,如果该对象增加了一个需要进行扩容那么原来是0现在变为1，然后正常操作,如果原来得容量为1那么扩容之后变为2，即最少扩容+1；**
@@ -422,7 +426,9 @@ ArrayList中只有当size=elementDate.length()即**把当前容量装满之后�
 
 **如果迭代器得初始化使用了带参构造方法那么表示迭代器将从该下标开始迭代,即cursor=参数，lastRet=-1,expectedModCount=modCount;**
 
+## ArrayList面试题
 
+https://blog.csdn.net/cjm2484836553/article/details/104415391
 
 ## LinkedList
 
@@ -562,7 +568,7 @@ public class LinkedList<E> extends AbstractSequentialList<E> implements List<E>,
    }
    
    Node<E> node(int index){
-    //返回相当于对应下标得List中得结点
+    //返回相当于对应下标得List中得结点，使用二分的方式去查找该节点首先让index和size的一半进行比较再决定是从前往后还是从后往前进行遍历较好
    }
    
    E get(int index){
@@ -624,6 +630,10 @@ LinkedList拥有linkFirst,linkLast,linkBefore,unlinkFirst,unlinkLast,unlink,这�
 LinkedList的迭代器和ArrayList的迭代器不同,它的迭代器拥有lastReturn,next这两个数据类型为Node的属性，分别代表最后一次取到的值和下一次取到的值,也有nextIndex代表下一次取得元素得下标，expectModCount和ArrayList中得expectModCount相同都是因为LinkedList不是线程安全得所谓为了保证迭代器得数据安全每次迭代操作都要验证其expectModCount和modCount是否相同即如果不相同说明这个时间段之间有其他线程对该LinkedList对象进行了操作无法保证线程安全即停止迭代器得操作
 ```
 
+## LinkedList面试题
+
+https://www.cnblogs.com/xiaofuge/p/13587826.html
+
 ## LinkedList与ArrayList之前得相同点与不同点
 
 ```
@@ -641,4 +651,19 @@ ArrayList有容量和扩容操作，当容量满了之后会扩容到原来得1.
 
 
 
-   
+   ## Vector和ArrayList和LinkedList的区别
+
+Vector和ArrayList都是使用数组存储，删除元素时删除操作后需要使部分元素位移，插入元素时插入操作后需要使部分元素位移,初始默认容量都是10
+
+LinkedList是基于双向链表实现的(含有头尾指针)
+
+**ArrayList和LinkedList不具有线程安全性,而Vector具有线程安全性他的方法都使用了syn关键字修饰**
+
+
+
+**有关扩容机制，ArrayList扩容是将容量扩容到原来的1.5倍然后把之前的数据拷贝到新建数组中，而Vector使进行2倍扩容然后将原有数据拷贝过去，并且Vector有一个扩容增量capacityIncrement,即如果需要扩容的话如果扩容增量大于0那么增加这个扩容增量的容量，否则扩大至原来的两倍**
+
+
+
+
+

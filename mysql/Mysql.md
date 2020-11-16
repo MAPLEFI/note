@@ -137,3 +137,33 @@ where条件里用不到的字段不创建索引
 表记录太少不需要创建索引
 
 经常增删改的表不需要创建索引
+
+## 通过SQL语句进行优化
+
+对查询进行优化，应该尽量避免全表扫描首先应该考虑在where及order by涉及的列上建立索引
+
+
+
+尽量避免where子句中使用!=或< >操作符,否则引擎将放弃使用索引而进行全表扫描
+
+
+
+尽量避免在where子句中对字段进行Null值判断否则将进行全表扫描不会走索引
+
+
+
+尽量避免在where子句中使用or来连接条件否则将导致引擎放弃使用索引 而进行全表扫描
+
+
+
+尽量避免在模糊查询like后使用前% 比如 like '%abd'此时将不会使用索引而是进行全表扫描
+
+in和not in也要慎用否则会导致全表扫描，比如select id from t where num in (1,2,3)对于连续的数值能用between就不用in,select id from t where num between 1 and 3
+
+尽量避免where子句对字段进行表达式操作会导致放弃索引进行全表扫描,比如select id from t where num/2=100,应该改为select id from t where num=100*2，尽量不要在where 条件的=左边进行运算会导致全表扫描
+
+
+
+尽量避免在where 子句中对字段进行函数操作，浙江导致引擎放弃使用索引而进行全表扫描，比如 select id from t where substring(name,1,3)='abc' 应该改为select id from t where name like 'abc%'
+
+任何地方都不要使用select * from t用具体的字段列表代替*不要返回用不到的任何字段
