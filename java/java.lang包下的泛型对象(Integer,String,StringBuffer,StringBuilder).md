@@ -128,3 +128,15 @@ public int hashCode(){
 
 
 
+### 区别
+
+**String对象值不可发生改变，这导致每次对String的操作都会生成新的String对象**，这样不仅效率低下而且浪费大量内存空间
+
+所以对字符串进行修改的时候需要使用StringBuffer和StringBuilder类，**和String类不同的是，StringBuffer和StringBuilder类的对象能够被多次修改并且不产生新的未使用对象**
+
+**StringBuilder和StringBuffer之间的最大不同在于StringBuilder的方法不是线程安全的**
+
+**由于StringBuilder相较于StringBuffer有速度又是所以多数情况下建议使用StringBuilder,在要求线程安全的情况下必须使用StringBuffer**
+
+
+

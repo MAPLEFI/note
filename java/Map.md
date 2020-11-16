@@ -9,7 +9,7 @@ int size();
 
 boolean isEmpty();
 
-boolean containsKey(Object key);//查询Map中是覅偶含有该Key
+boolean containsKey(Object key);//查询Map中是是否含有该Key
 
 boolean containsValue(Object value);//查询在MaP中是否拥有该value值
 
@@ -473,12 +473,11 @@ public class HashMap<K,V> extends AbstractMap<K,V> implements Map<K,V>,Cloneable
 
 ### HashMap总结
 
-```
-HashMap通常使用Node桶结点来存取，在满足树化阈值和树化容量阈值得条件下会将原来得桶从数组得形式变成红黑树TreeNode得形式，树化阈值为8,树化容量阈值为64，如果put所调用得putVal方法插入完成之后判断该桶是否已经使用了大于等于8个结点，如果是那么调用treeifyBin方法进行桶树化，treeifyBin方法树化得是putVal中得hash值所对应得桶，treeifyBin进去之后首先判断目前HashMap得容量是否达到树化容量阈值，
-如果没有达到就进行扩容,扩容操作为resize(),作用将容量扩大两倍或者变为默认初始容量但是不能超出最大容量，并且随着容量改变而改变对应得thresold值即扩容因子，一般为table.length*loadFactor,并且将原来得元素重新赋值到新的容量里面
+HashMap通常使用Node桶结点来存取，在**put是在该桶最后面进行添加的一个Node结点而不是进行结点的更新的话会去判断该桶的使用长度是否超过8来进行树化**，树化会首先判断满足树化容量阈值得条件下会将原来得桶从数组得形式变成红黑树TreeNode得形式，树化阈值为8,树化容量阈值为64，**如果put所调用得putVal方法插入完成之后判断该桶是否已经使用了大于等于8个结点，如果是那么调用treeifyBin方法进行桶树化，treeifyBin方法树化得是putVal中得hash值所对应得桶，treeifyBin进去之后首先判断目前HashMap桶数组得容量是否达到树化容量阈值，**
+**如果没有达到就进行扩容,扩容操作为resize(),作用将容量扩大两倍或者变为默认初始容量但是不能超出最大容量，并且随着容量改变而改变对应得thresold值即扩容因子，一般为table.length*loadFactor,并且将原来得元素重新赋值到新的容量里面**
 如果达到了树化容量阈值和树化阈值那么就将该桶从单链表改编成为一个红黑树
 
-数组化:通过resize()方法里面调用split方法来进行将原来的元素赋值给新容量，在此时检测当原来已经为树的情况下如果当前桶的使用量已经<=6，时会红黑树变为数组
+数组化:**通过resize()方法里面调用TreeNode的split方法来进行将原来的元素赋值给新容量，在此时检测当原来已经为树的情况下如果当前桶的使用量已经<=6，时会红黑树变为数组**
 
 
 HashMap默认容量为16,ArrayList得默认容量为10
@@ -494,7 +493,6 @@ HashMap中的put和remove都是分别调用了putVal和removeVal方法，put方�
 get方法实际调用的是getNode方法，同样式通过key和key的hash值进行查询,getNode会遍历对应桶找到对应节点进行返回，如果返回的不为null那么get方法就取该节点的value值
 
 Hash值内的迭代器HashIterator 其中有属性current,next,index,expectedModCount分别代表当前节点，下一个节点，当前桶的下标，和期忘修改次数，和以往的迭代器相同由于线程不安全所以使用expectedModCount来保证数据安全性，其中getnext()和初始化方法均会在末尾进行下一节点的判断如果下一节点next为null那么会转移到下一个桶继续判断是否为空，直到匹配到一个不为空的节点或者整个对象的桶数组都匹配完成之后都没有那就为null
-```
 
 ## LinkedHashMap
 
@@ -580,3 +578,6 @@ public class LinkedHashMap<K,V> extends HashMap<K,V> implements Map<K,V>{
 双向链表，放弃了HashMap的散列表
 ```
 
+## 线程安全的Map
+
+线程安全的有HashTable和CurrentHashMap,相比于HashTable来说CurrentHashMap的效率更高因为HashTable使用了syn关键字几乎把整个表都锁起来了当有多个线程同时访问的时候只能由一个线程访问而CurrentHashMap则是使用了CAS保证其线程安全并且当有多个线程访问的时候能有不止一个线程能够进行访问
