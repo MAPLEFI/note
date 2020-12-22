@@ -40,7 +40,7 @@ explain select * from emp e where e.deptno in (select d.deptno from dept d where
 
 ### 什么是索引？
 
-索引是一种数据结构对数据库表种得一列或多列值进行排序的一种结构，使用索引可以快速访问数据库表中的特定信息
+索引是一种数据结构对数据库表中得一列或多列值进行排序的一种结构，使用索引可以快速访问数据库表中的特定信息
 
 ### 索引分类
 
@@ -167,3 +167,4 @@ in和not in也要慎用否则会导致全表扫描，比如select id from t wher
 尽量避免在where 子句中对字段进行函数操作，浙江导致引擎放弃使用索引而进行全表扫描，比如 select id from t where substring(name,1,3)='abc' 应该改为select id from t where name like 'abc%'
 
 任何地方都不要使用select * from t用具体的字段列表代替*不要返回用不到的任何字段
+
