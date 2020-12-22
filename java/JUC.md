@@ -1,4 +1,4 @@
-# JUC
+# JUC 
 
 ## 介绍
 
@@ -104,7 +104,9 @@ class ThreadDemo implements Runnable{ //这个线程是用来修改flag的值的
 }
 ```
 
-虽然控制台打印了ThreadDemo里面的话但是没有打印主程序中如果读到flag为true时打印的话，这表示在主线程中读到的flag还是false,这就是内存可见性的问题
+虽然控制台打印了ThreadDemo里面的话但是没有打印主程序中如果读到flag为true时打印的话，这表示在主线程中读到的flag还是false,这就是内存可见性的问题,**及时通知使用这个共享变量的线程这个变量发生的变化**
+
+
 
 ### synchronized原理及应用
 
@@ -214,7 +216,7 @@ CAS操作是指有三个值V(内存值)  A(预估值)  B(新值)，如果V==A �
 
 偏向锁并不存在互斥性，而是**为了减少同一个线程拿锁时的消耗只会在指向线程ID的时候才会使用一次CAS，所以效率非常的高**，**如果有别的线程来竞争这个锁时这个线程就会撤销偏向锁**，尝试把Mark Word里的线程ID指向竞争的锁,然后判断这个线程是否还存活，**如果还活着就会把该线程放入到轻量级锁当中(通过竞争之后锁升级了)**
 
-
+**如果同步锁只有一个线程访问不存在多线程争用的情况则线程是不需要触发同步的，但是如果在运行过程种遇到了其他 线程抢占所，则持有偏向锁的线程会被挂起升级到轻量级锁，抢占的线程变成偏向锁**
 
 #### 轻量级锁(CAS)
 
@@ -246,13 +248,13 @@ CAS操作是指有三个值V(内存值)  A(预估值)  B(新值)，如果V==A �
 
 用法：
 
-volatile关键字：当多个线程操作共享数据时可以保证内存中的数据可见，用这个关键字修饰共享数据就会及时的把线程缓存中的数据刷新到主存中去也可以理解为直接操作主存中的数据，所以在不使用锁的情况下可以使用volatile修饰
+volatile关键字：当多个线程操作共享数据时可以保证内存中的数据可见，**用这个关键字修饰共享数据就会及时的把线程缓存中的数据刷新到主存中去**也可以理解为直接操作主存中的数据，所以在不使用锁的情况下可以使用volatile修饰
 
 ```
 public volatile boolean flag=false;
 ```
 
-
+共享变量最好都使用volatile关键字
 
 #### volatile和synchronized的区别
 
@@ -416,7 +418,7 @@ class LatchDemo implements Runnable {
 
 ## 信号量(Semaphore)
 
-计数信号量用来控制同时访问某个特定资源的操作适量或者同时执行某个指定操作的数量，信号量还可以用来实现某种资源池，或者对容器施加边界
+计数信号量**用来控制同时访问某个特定资源的操作适量或者同时执行某个指定操作的数量**，信号量还可以用来实现某种资源池，或者对容器施加边界
 
 
 
@@ -521,6 +523,8 @@ private Lock lock=new ReentrantLock();
 AQS即AbstractQueueSynchronizer得缩写，是并发编程中实现同步器得一个框架
 
 AQS基于一个FIFO双向队列实现，被设计给那些依赖一个代表状态得原子int值得同步器使用，**在AQS中有一个state得int值代表同步状态，该值通过CAS进行原子修改**
+
+在AQS中state可以认为是资源，一个线程想要占有资源，首先检查state,如**果state可以被占用(acquire)则该线程可占用相应的资源，并通过CAS更新state,如果是独占还要将当前线程设置，占用成功后便可继续执行业务，如果资源不足或已经被占用**，**state初始化为0，成功获取一次锁就把state+1,如果释放一次锁就state-1,每次一个线程想要获取锁必须在state为0的时候才能成功获取，但是如果同一个锁可以多次获取，当然也要多次释放不然回不到0**,则该线程封装成一个Node并进入等待队列addWaiter,同时该线程进入自旋，检查他的前一个结点是否是head并再次尝试获取资源，如果不成功则检查该节点是否满足挂起条件(主要是检查Node.waitStatus),如果满足将该节点挂起，等待队列前面结点执行release时唤醒，唤醒以后继续字选，如果获取资源成功，则将自身结点setHead,在自旋的过程中要检查线程是否被interrupet。如果时共享锁则在acquireShared执行成功后还要看一下下一个结点是否是共享节点，如果是则需要传递唤醒。同时releaseShared也会唤醒后续的结点继续执行，如果有的话。
 
 **AQS中存在一个FIFO队列(同步队列)，当共享资源被某个线程占有，其他请求该资源的线程将会阻塞，从而进入同步队列，队列节点元素有4种类型，**每种类型标识线程被阻塞得原因**，这四种类型分别是
 
@@ -695,10 +699,25 @@ public final void acquire(int arg) {
 **获取锁是否成功在于tryAcquire(arg)方法**:
 
 ```
-
-
-
-
+        protected final boolean tryAcquire(int acquires) {
+            final Thread current = Thread.currentThread();
+            int c = getState();
+            if (c == 0) {
+                if (!hasQueuedPredecessors() &&
+                    compareAndSetState(0, acquires)) {
+                    setExclusiveOwnerThread(current);
+                    return true;
+                }
+            }
+            else if (current == getExclusiveOwnerThread()) {
+                int nextc = c + acquires;
+                if (nextc < 0)
+                    throw new Error("Maximum lock count exceeded");
+                setState(nextc);
+                return true;
+            }
+            return false;
+        }
 ```
 
 
@@ -925,7 +944,7 @@ public final void acquireShared(int arg) {
 }
 ```
 
-在该方法中会首先调用tryAcquireShared方法，**当返回值为大于等于0的时候方法结束说明成功获取锁**，**否则表明获取同步状态失败即获取锁失败会执行doAcquireShared()方法**，共享式锁获取失败后不会将该线程加入同步队列而是直接从同步队列中拿节点出来尝试获取锁
+在该方法中会首先调用tryAcquireShared方法，**当返回值为大于等于0的时候方法结束说明成功获取锁**，**否则表明获取同步状态失败即获取锁失败会执行doAcquireShared()方法**，共享式锁获取失败后不会将该线程加入同步队列而是直接从同步队列中拿节点出来尝试获取锁-
 
 ```
 private void doAcquireShared(int arg) {
@@ -1129,6 +1148,12 @@ class Mutex implements Lock, java.io.Serializable {
 
 **AQS是一个并发同步框架，它内部有一个同步队列如果是独占式锁线程获取锁失败后就会进入到同步队列中(双向队列)并加入队尾，如果此时同步队列为空会先创建一个头结点然后一直尝试直到将该线程放入同步队列中，成功放到同步队列尾部之后会将队首的节点拿出来尝试获取锁，失败就阻塞，同步队列中有四种状态表示进入同步队列的原因，如果是共享式锁获取锁失败之后线程不会进入同步队列中而是跳过这一步骤将同步队列中的首个节点拿出来尝试获取锁失败就阻塞，AQS除了同步队列以外还有外部的用volatile修饰的共享同步状态值state,锁的获取成功与否与其息息相关，独占锁的释放成功之后会将队首阻塞的线程唤醒并将其在同步队列中的状态置为0，共享式锁的释放和独占式锁相同只是它会使用CAS+死循环的方式保证多个线程能安全的释放同步状态然后将队首的状态值置为0并唤醒**
 
+
+
+**AQS 内部使用了一个FIFO(双向队列)即Node这个链表组成的双向队列来维护内部的同步队列(等待队列),AQS内部有两种模式的锁独占锁和共享锁,一旦有线程没能成功获取锁就会尾插进入同步队列然后阻塞，直到等待队列前面的结点成功获取线程 之后才会使用CAS自旋的方式去重新尝试获取锁，acquire/acquireShared获取锁，tryacquire/tryacquireShared才是真正的使用CAS尝试和别的线程竞争锁的方法，如果失败就会调用addWaiter/doAcquireShared将该线程打包称对应类型的结点(独占/共享)然后尾插进入同步队列然后阻塞，直到等待队列前一个(前一个必须是head结点才行)释放之后(release/releaseShared)再唤醒该线程尝试进行竞争锁，共享锁的情况释放锁的话由于允许多个线程获得状态值所以为了线程安全释放使用CAS失败就continue得方式**
+
+**AQS允许重复获得同一个锁即可重入具体体现在state这个属性上只有当state为0的时候才能获得锁，一旦获得锁就会state+1一旦释放锁就会state-1,多次获得就多次+1当然也需要多次释放才能回到最初的0**
+
 ## 等待唤醒机制(代价非常的高)
 
 ### wait和notify以及notifyAll
@@ -1139,7 +1164,9 @@ wait  notify  notifyAll这三个最好都在synchronized或者lock的情况下�
 
 wait是object类的,sleep属于线程类,sleep不释放锁而wait会释放锁
 
+**wait是释放该线程得锁放入等待队列中然后等待notify,此时该线程得程序计数器也会记录下运行得位置下次保证能回到正确得位置。**
 
+**notify是指随机唤醒等待队列中得一个线程,notifyAll是指唤醒全部等待队列中得线程让他们去竞争锁.**
 
 notify是指唤醒wait等待的一个线程,notifyAll是指释放wait等待的所有线程
 
@@ -1147,103 +1174,59 @@ notify是指唤醒wait等待的一个线程,notifyAll是指释放wait等待的�
 
 一个消费者线程抢到执行权，发现product是0，就等待，这个时候，另一个消费者又抢到了执行权，product是0，还是等待，此时两个消费者线程在同一处等待。然后当生产者生产了一个product后，就会唤醒两个消费者，发现product是1，同时消费，结果就出现了0和-1。这就是**虚假唤醒**。
 
-### 用Lock锁实现等待唤醒
+### 用Lock锁得Condition(等待队列)实现等待唤醒
 
 **Condition用来代替传统的wait和notify实现线程之间的协作**，相比与使用wait和notify使用Confition的await，singal这种方式实现线程间协作更加安全和高效，**阻塞队列实际上是用了Condition来模拟线程间的协作**
 
-
-
-Condition是个接口基本得方法就是await和signal
-
-Condition依赖于Lock接口生成一个Condition对象使用lock.newCondition()
-
-Condition中的await对应wait(),signal对用notify,signalAll对应notifyAll
-
-### 线程指定顺序执行，使用condition来实现线程中的通讯
+Condition使用Lock对象生成对应得对象，每个Condition对象表示一个等待队列，并且每个等待队列都不同也互不影响，使用需要注意和wait/notify相同最后一定要多执行一次唤醒，以免程序无法结束，比如两个等待对垒c1/c2,如果操作为唤醒一个进去一个那么到最后如果不多执行一次唤醒得话肯定会有一个等待队列里面还有一个线程没有出来，程序无法结束
 
 ```
-public class TestLoopPrint {
+public class ReentrantLock_Condition {
+    static Lock lock=new ReentrantLock();
     public static void main(String[] args) {
-        AlternationDemo ad = new AlternationDemo();
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                for (int i = 0; i < 10; i++) {
-                    ad.loopA();
+        char []c1="1234567".toCharArray();
+        char []c2="ABCDEFG".toCharArray();
+
+        Condition conditiont1=lock.newCondition();
+        Condition conditiont2=lock.newCondition();
+
+        new Thread(()->{
+            lock.lock();
+            try{
+                for(char c:c1){
+                    System.out.print(c);
+                    conditiont2.signal();//唤醒conditiont2等待队列中的一个线程
+                    conditiont1.await();//将该线程放入到conditiont1等待队列中
                 }
+                conditiont2.signal();//最后的情况如果只剩一个t1和t2那么运行到此处就再次激活t2线程完成释放
+            }catch (Exception e){
+                e.printStackTrace();
             }
-        }, "A").start();
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                for (int i = 0; i < 10; i++) {
-                    ad.loopB();
+            finally {
+                lock.unlock();;
+            }
+        },"t1").start();
+
+
+        new Thread(()->{
+            lock.lock();
+            try{
+                for(char c:c2){
+                    System.out.print(c);
+                    conditiont1.signal();//唤醒conditiont2等待队列中的一个线程
+                    conditiont2.await();//将该线程放入到conditiont1等待队列中
                 }
+                conditiont1.signal();//最后的情况如果只剩一个t1和t2那么运行到此处就再次激活t1线程完成释放
+            }catch (Exception e){
+                e.printStackTrace();
             }
-        }, "B").start();
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                for (int i = 0; i < 10; i++) {
-                    ad.loopC();
-                }
+            finally {
+                lock.unlock();;
             }
-        }, "C").start();
+        },"t1").start();
     }
 }
 
-class AlternationDemo {
-    private int number = 1;//当前正在执行的线程的标记
-    private Lock lock = new ReentrantLock();
-    Condition condition1 = lock.newCondition();
-    Condition condition2 = lock.newCondition();
-    Condition condition3 = lock.newCondition();
-
-    public void loopA() {
-        lock.lock();
-        try {
-            if (number != 1) { //判断
-                condition1.await();
-            }
-            System.out.println(Thread.currentThread().getName());//打印
-            number = 2;
-            condition2.signal();
-        } catch (Exception e) {
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    public void loopB() {
-        lock.lock();
-        try {
-            if (number != 2) { //判断
-                condition2.await();
-            }
-            System.out.println(Thread.currentThread().getName());//打印
-            number = 3;
-            condition3.signal();
-        } catch (Exception e) {
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    public void loopC() {
-        lock.lock();
-        try {
-            if (number != 3) { //判断
-                condition3.await();
-            }
-            System.out.println(Thread.currentThread().getName());//打印
-            number = 1;
-            condition1.signal();
-        } catch (Exception e) {
-        } finally {
-            lock.unlock();
-        }
-    }
-}
 ```
 
 ## ReadWriterLock读写锁
@@ -1372,7 +1355,7 @@ ReentrantReadWriteLock的对象创造如果是无参的情况下会默认创造�
 
 ## 线程池
 
-我们使用线程的时候需要new一个线程用完了有需要销毁这样频繁的创建和销毁很消耗西元，所以就提供了线程池道理和Jedis连接池差不多，每次线程从线程池中拿出用完归还给线程池，线程池中有一个线程队列，里面保存着所有等待状态的线程
+我们使用线程的时候需要new一个线程用完了有需要销毁这样频繁的创建和销毁很消耗资源，所以就提供了线程池道理和Jedis连接池差不多，每次线程从线程池中拿出用完归还给线程池，线程池中有一个线程队列，里面保存着所有等待状态的线程
 
 
 
@@ -1841,6 +1824,28 @@ public static ExecutorService newCachedThreadPool() {
 **Question:**
 
 这个个人觉得这三种静态方法的实现把corePoolSize和maximumPoolSize都固定了限制了变化性，有谁能说一下为什么推荐这种形式来创建线程池而不直接通过ThreadPoolExecutor来创建呢?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -494,6 +494,10 @@ get方法实际调用的是getNode方法，同样式通过key和key的hash值进
 
 Hash值内的迭代器HashIterator 其中有属性current,next,index,expectedModCount分别代表当前节点，下一个节点，当前桶的下标，和期忘修改次数，和以往的迭代器相同由于线程不安全所以使用expectedModCount来保证数据安全性，其中getnext()和初始化方法均会在末尾进行下一节点的判断如果下一节点next为null那么会转移到下一个桶继续判断是否为空，直到匹配到一个不为空的节点或者整个对象的桶数组都匹配完成之后都没有那就为null
 
+## CurrentHashMap
+
+
+
 ## LinkedHashMap
 
 ```
