@@ -189,7 +189,7 @@ public class HashMap<K,V> extends AbstractMap<K,V> implements Map<K,V>,Cloneable
          
          this.loadFactor=loadFactor;//更新负载因子
          this.threshold=tableSizeFor(initialCapacity);//设定扩容因子得值为比initialCapacity大得最近得一个2得幂次方得数
-    }//为了避免多次得resize()浪费性能，比如需要开一个1000容量得HashMap,但是1000*0.75<1000,为了让size*0.75>1000就让其开2048个空间最佳
+    }//为了避免多次得resize()浪费性能，比如需要开一个1000容量得HashMap,但是1000*0.75<1000,为了让size*0.75>1000就让其开2048个空间最佳，该构造方法并没有直接new桶数组而是将initialCapacity得最近一个能包围它得2的次方数的值赋值给扩容阈值threshold，下次扩容的时候会直接将这个threshold当作newCap来new新的桶数组吧threshold变成新的newCap*loadFactor
     
     
     public HashMap(int initialCapacity){ this(initialCapacity,DEFAULT_LOAD_FACTOR)
@@ -474,7 +474,9 @@ public class HashMap<K,V> extends AbstractMap<K,V> implements Map<K,V>,Cloneable
 ### HashMap总结
 
 HashMap通常使用Node桶结点来存取，在**put是在该桶最后面进行添加的一个Node结点而不是进行结点的更新的话会去判断该桶的使用长度是否超过8来进行树化**，树化会首先判断满足树化容量阈值得条件下会将原来得桶从数组得形式变成红黑树TreeNode得形式，树化阈值为8,树化容量阈值为64，**如果put所调用得putVal方法插入完成之后判断该桶是否已经使用了大于等于8个结点，如果是那么调用treeifyBin方法进行桶树化，treeifyBin方法树化得是putVal中得hash值所对应得桶，treeifyBin进去之后首先判断目前HashMap桶数组得容量是否达到树化容量阈值，**
-**如果没有达到就进行扩容,扩容操作为resize(),作用将容量扩大两倍或者变为默认初始容量但是不能超出最大容量，并且随着容量改变而改变对应得thresold值即扩容因子，一般为table.length*loadFactor,并且将原来得元素重新赋值到新的容量里面**
+**如果没有达到就进行扩容,如果没有达到阈值那么就算该桶结点大于8时也不会树化依然以链表的形式存在，直到达到阈值并且触发树化机制**
+
+**扩容操作为resize(),作用将容量扩大两倍或者变为默认初始容量但是不能超出最大容量，并且随着容量改变而改变对应得thresold值即扩容因子，一般为table.length*loadFactor,并且将原来得元素重新赋值到新的容量里面**
 如果达到了树化容量阈值和树化阈值那么就将该桶从单链表改编成为一个红黑树
 
 数组化:**通过resize()方法里面调用TreeNode的split方法来进行将原来的元素赋值给新容量，在此时检测当原来已经为树的情况下如果当前桶的使用量已经<=6，时会红黑树变为数组**
@@ -483,7 +485,7 @@ HashMap通常使用Node桶结点来存取，在**put是在该桶最后面进行�
 HashMap默认容量为16,ArrayList得默认容量为10
 
 
-属性说明：table桶数组,size该对象所使用得所有结点数量(并不一定等于使用得桶得数量，大部分情况下会超过)，loadFactor负载因子用于扩容，threshold扩容因子一般情况下等于loadFactor*table.length,当size>threshold得情况下会触发扩容方法，一般情况下如果为默认值使用得size>8得情况下会将原对象得容量从16扩充到64，由于resize()扩容操作非常消耗内存和耗时，所以需要尽量避免resize()操作，比如需要一个可以容纳1000得HashMap对象如果直接初始化1000会变为一个容量为1024得对象但是loadFactor*table.length=768,也就是说当size超过768得时候就需要扩容了，为了避免这个情况所以需要初始化一个table.length*loadFactor=1000即初始化一个容量为1334即初始化容量为2048的对象
+属性说明：table桶数组,size该对象所使用得所有结点数量(并不一定等于使用得桶得数量，大部分情况下会超过)，loadFactor负载因子用于扩容，threshold扩容因子一般情况下等于loadFactor * table.length,当size>threshold得情况下会触发扩容方法，一般情况下如果为默认值使用得size>8得情况下会将原对象得容量从16扩充到64，由于resize()扩容操作非常消耗内存和耗时，所以需要尽量避免resize()操作，比如需要一个可以容纳1000得HashMap对象如果直接初始化1000会变为一个容量为1024得对象但是loadFactor*table.length=768,也就是说当size超过768得时候就需要扩容了，为了避免这个情况所以需要初始化一个table.length*loadFactor=1000即初始化一个容量为1334即初始化容量为2048的对象
 
 
 
@@ -494,7 +496,13 @@ get方法实际调用的是getNode方法，同样式通过key和key的hash值进
 
 Hash值内的迭代器HashIterator 其中有属性current,next,index,expectedModCount分别代表当前节点，下一个节点，当前桶的下标，和期忘修改次数，和以往的迭代器相同由于线程不安全所以使用expectedModCount来保证数据安全性，其中getnext()和初始化方法均会在末尾进行下一节点的判断如果下一节点next为null那么会转移到下一个桶继续判断是否为空，直到匹配到一个不为空的节点或者整个对象的桶数组都匹配完成之后都没有那就为null
 
+**在JDK1.7和JDK1.8之间HashMap最大的区别在于1.7使用了散列链表的方式可能导致链表会很长，而1.8使用了红黑树，当该桶达到树化阈值和桶长度大于8时就会将该桶树化以减少搜索时间**
+
 ## CurrentHashMap
+
+CurrentHashMap为什么线程安全?
+
+因为其中所有操作均使用了CAS来保证线程安全，传统得HashMap里面使用了modCount，但是也只能保证在使用迭代器时得线程安全
 
 
 
@@ -572,6 +580,28 @@ public class LinkedHashMap<K,V> extends HashMap<K,V> implements Map<K,V>{
           removeNode(hash(key),key,null,false,true);
         }
      }
+     //将该结点放到链尾
+     void afterNodeAccess(Node<K,V> e){
+        LinkedHashMap.Entry<K,V>last;
+        if(accessOrder&&(last=tail)!=e){
+        LinkedHashMap.Entry<K,V>p=(LinkedHashMap.Entry<K,V>)e,b=p.before,a=p.after;
+        p.after=null;
+        if(b==null)//说明该点是head现在要将其放入队尾那么就将head=a
+          head=a;
+        }else
+           b.after=a; //将原来得前一个于后一个相连
+        if(a!=null)//如果该节点不是队尾那么就将其与前一个点相连
+          a.before=b;
+         else//如果是队尾就直接将其前一个结点作为last
+          last=b;
+         if(last==null) head=p;
+         else{
+             p.before=last;
+             last.after=p;
+         }
+         tail=p;
+         ++modCount;
+     }
 
 }
 ```
@@ -579,8 +609,43 @@ public class LinkedHashMap<K,V> extends HashMap<K,V> implements Map<K,V>{
 ### LinkedHashMap总结
 
 ```
-双向链表，放弃了HashMap的散列表
+LinkedHashMap得构造方法是调用了HashMap得构造方法,它是HashMap得子类，实则还是使用了HashMap得桶,同时还使用了first和head来维护一个双向链表结点为LinkedHashMap.Entrty,和现有得Redis等缓存实现方法基本一致，在get时需要使用getNode来从HashMap得哈希桶中寻找到对应得结点来进行返回
+
+LinkedHashMap实则没有put方法通过LinkedHashMap来调用得put方法是调用得HashMap得put方法,所以实质上放入LinkedHashMap中得结点其实都放入了HashMap得Hash桶中,在HashMap得put中最后几行调用了一次afterNodeAccess方法即
+
+其中得get方法和getOrDefault方法区别是getOrDefault如果没有获取到对应得值就会返回参数得default值而get方法如果没有获取到就返回null,如果构造方法里面讲accessOrder这个参数置为true得话那么在get或者getOrDefault里面成功获取值之后均会调取afterNodeAccess()方法将该结点放到链尾，可以通过这个特性来使用LinkedHashMap构造一个LRU缓存
+
+LinkedHashMap除了get方法是自己实现了实则也调用了HashMap得getNode方法以外其余得put和remove方法均调用得HashMap中得方法(老寄生虫了QAQ),在HashMap中得remove方法最后调用了afterNodeRemoval()方法在成功吧该结点从Hash桶中删除之后同步吧双向链表中得结点一起删除掉
+
+LinkedHashMap基本都是靠HashMap来进行正常得运作，只有get方法自己实现了不过还是调用了HashMap得getNode方法才能运作，其余全使用得HashMap中得方法比如remove、put方法，每次调用HashMap中得方法之后都要调用一次LinkedHashMap中实现得各种aftrerNodeXXX方法做到哈希桶和双向链表得同步，它自己实现得get方法最后也要调用afterNodeAccess方法不过许需要在构造时将accessOrder属性置为true才行,除了afterNodeAccess以外得afterNodeXXX方法均不需要将accessOrder置为true，LinkedHashMap是由一个双向链表和哈希桶维护得数据结构，与目前常使用得缓存结构Redis得结构相似所以可以直接使用它来构造一个LRU缓存类(最久未使用淘汰),多增加一个淘汰机制即重写LinkedHashMap中得removeEldestEntry方法来判定什么时候淘汰head
 ```
+
+#### 使用LinkedHashMap构造一个LRU缓存类
+
+```
+//LRU最久未使用淘汰算法，达到容量上限淘汰最久没有使用得键值对
+class LRUCache2 extends LinkedHashMap<Integer,Integer>{
+    
+    private int capacity;
+    public int get(int key){
+        return super.get(key);
+    }
+    public void put(int key,int value){
+        super.put(key,value);
+    }
+    public LRUCache2(int capacity){
+        super(capacity,0.75f,true);//将LinkedHashMap得accessOrder置为true
+        this.capacity=capacity;
+    }
+
+    @Override
+    protected boolean removeEldestEntry(Map.Entry<Integer, Integer> eldest) {
+        return size()>capacity;
+    }
+}
+```
+
+
 
 ## 线程安全的Map
 
