@@ -63,7 +63,7 @@ ApplicationContext ioc=new ClassPathXmlApplicationContext("ioc.xml")//根据spri
 
 还可以有context:include-filter标签标识只扫描哪些，其中有属性type="annotation"标识只扫描加了哪些注解的类，后面的expression写注解的全类名，也有type="assignable"表示只扫描哪一些类，后面的expression写具体哪一个类的全类名
 
-@Autowired自动赋值失去容器中找对应的组件，@Autowired原理 ：
+@Autowired自动赋是去容器中找对应的组件，@Autowired原理 ：
 
 ```
 第一步先看属性类型是什么，先按照类型去容器中找到对应的组件，三种情况：找到一个就赋值，没有找到就抛出异常，

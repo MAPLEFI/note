@@ -627,6 +627,8 @@ LinkedList使用链表进行连接，它依然有modCount这个继承而来的�
 
 LinkedList拥有linkFirst,linkLast,linkBefore,unlinkFirst,unlinkLast,unlink,这些方法来支持LinkedList中的add和remove方法,其中add(E e)调用的为linkLast,remove(E e)调用的为unlinkFirst
 
+在LinkedList中进行查找某个结点会使用对半查找，首先判断下标和size的一半之间的关系，如果大于一半则冲尾部开始遍历，如果小于一半则从头部开始遍历 
+
 LinkedList的迭代器和ArrayList的迭代器不同,它的迭代器拥有lastReturn,next这两个数据类型为Node的属性，分别代表最后一次取到的值和下一次取到的值,也有nextIndex代表下一次取得元素得下标，expectModCount和ArrayList中得expectModCount相同都是因为LinkedList不是线程安全得所谓为了保证迭代器得数据安全每次迭代操作都要验证其expectModCount和modCount是否相同即如果不相同说明这个时间段之间有其他线程对该LinkedList对象进行了操作无法保证线程安全即停止迭代器得操作
 ```
 
@@ -642,7 +644,7 @@ https://www.cnblogs.com/xiaofuge/p/13587826.html
 
 不同点:ArrayList使用数组存储，LinkedList使用链表存储;LinkedList使用内置类Node来进行存储
 
-ArrayList有容量和扩容操作，当容量满了之后会扩容到原来得1.5被向下取整比如9扩容完为13，LinkedList没有容量和扩容操作
+ArrayList有容量和扩容操作，当容量满了之后会扩容到原来得1.5被向下取整比如9扩容完为13最少扩容+1，LinkedList没有容量和扩容操作
 
 
 ```
