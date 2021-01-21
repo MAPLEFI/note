@@ -518,6 +518,8 @@ private Lock lock=new ReentrantLock();
 
 **ReentrantLock使用的公平锁或者非公平锁取决于创建对象时的方法，如果什么参数都不加那么默认为非公平锁**
 
+Lock锁实现原理为AQS中的独占锁
+
 ### AQS
 
 AQS即AbstractQueueSynchronizer得缩写，是并发编程中实现同步器得一个框架
@@ -780,6 +782,11 @@ private Node enq(final Node node) {
 **1.在当前线程是第一个加入同步队列时，调用compareAndSetHead(new Node())初始化头节点**
 
 **2.自旋不断尝试CAS尾插入节点直到成功为止**
+
+总结独占模式获取锁失败的进行的操作:
+
+- 将当前线程变成结点放到AQS的等待队列中
+- ReentrantLock锁只是涉及到AQS的同步队列，然而AQS中拥有一个同步队列和多个等待队列
 
 现在已经清楚获取独占锁失败得线程包装成Node进入同步队列得操作了，但是同步队列中得节点会做什么来保证自己能够有机会获得独占式锁了?**acquireQueued()方法他的作用就是排队获取锁得过程**
 
